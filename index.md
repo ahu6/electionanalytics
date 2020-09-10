@@ -4,6 +4,8 @@ Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying 
 
 If you have any comments or suggestions, feel free to email me at ahu@college.harvard.edu.
 
+## [08/13 Introduction](posts/01-Intro.md)
+
 ### Markdown
 
 Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
