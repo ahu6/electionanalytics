@@ -1,8 +1,8 @@
-## Welcome to GitHub Pages
+## Welcome!
 
-You can use the [editor on GitHub](https://github.com/ahu6/electionanalytics/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying Applied Math and Economics. I am deeply interested in data science and data journalism, and this blog will explore those areas in the context of the United States' election system. My goal is to analyze possible predictors for the outcome of the 2020 U.S. presidential election and to convey my insights in a clear and engaging way. I hope you'll join me along this journey!
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+If you have any comments or suggestions, feel free to email me at ahu@college.harvard.edu.
 
 ### Markdown
 
