@@ -4,7 +4,7 @@
 
 
 @font-face{
-font-family: 'Quicktype';
+font-family: 'KumbhSans';
 src: url('/fonts/KumbhSans-Regular.ttf'),
      url('/fonts/KumbhSans-Bold.ttf'),
      url('/fonts/KumbhSans-Light.ttf');
@@ -37,7 +37,8 @@ font-style: normal;
 body {
   padding: 0;
   margin: 0;
-  font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: 'KumbhSans';
+  
   font-size: 16px;
   line-height: 1.5;
   color: $body-text-color;
