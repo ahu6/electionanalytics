@@ -4,12 +4,12 @@
 
 
 @font-face{
-font-family: 'KumbhSans';
-src: url('/fonts/KumbhSans-Regular.ttf'),
-     url('/fonts/KumbhSans-Bold.ttf'),
-     url('/fonts/KumbhSans-Light.ttf');
-font-weight: normal;
-font-style: normal;
+     font-family: 'KumbhSans';
+     src: url('/fonts/KumbhSans-Regular.ttf') format('ttf'),
+          url('/fonts/KumbhSans-Bold.ttf') format('ttf'),
+          url('/fonts/KumbhSans-Light.ttf') format('ttf');
+     font-weight: normal;
+     font-style: normal;
 }
 
 @mixin large {
