@@ -1,7 +1,16 @@
 @import "normalize";
 @import "rouge-github";
 @import "variables";
-@import url('https://fonts.googleapis.com/css?family=Open+Sans:400,700');
+
+
+@font-face{
+font-family: 'Quicktype';
+src: url('/fonts/KumbhSans-Regular.ttf'),
+     url('/fonts/KumbhSans-Bold.ttf'),
+     url('/fonts/KumbhSans-Light.ttf');
+font-weight: normal;
+font-style: normal;
+}
 
 @mixin large {
   @media screen and (min-width: #{$large-breakpoint}) {
