@@ -4,4 +4,4 @@ Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying 
 
 If you have any comments, questions, or suggestions, please feel free to email me at [ahu@college.harvard.edu](ahu@college.harvard.edu).
 
-## [September 13: Introduction](posts/09_13.md)
+## [September 13: Introduction: The Electoral College](posts/09_13.md)
