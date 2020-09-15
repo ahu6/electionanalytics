@@ -9,9 +9,6 @@ library(tidyverse)
 library(ggplot2)
 library(usmap)
 
-# set working directory
-setwd("~/Documents/OneDrive - Harvard University/Fall '20/Gov 1347/Section/Section 1")
-
 
 ### Read and inspect data ###
 
