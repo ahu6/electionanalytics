@@ -7,3 +7,5 @@ If you have any comments, questions, or suggestions, please feel free to email m
 ## [September 14: Introduction](posts/09_14.md)
 
 As we witnessed during the 2016 presidental election season, predicting a presidential election’s outcome is difficult. Scholars have put forth numerous theories, with many factors that may help to determine who will win, yet there is always room for surprises and uncertainty. To set the scene for our prediction model, we begin by exploring the system we have in place for selecting our country’s president — the electoral college system — and its consequences. Next week we will begin building our predictive model.
+
+## [September 21: Economic Indicators](posts/09_21.md)
