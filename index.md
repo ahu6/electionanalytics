@@ -11,3 +11,5 @@ As we witnessed during the 2016 presidental election season, predicting a presid
 ## [September 21: Economic Indicators](posts/09_21.md)
 
 This week we begin building our predictive model using economic indicators. Voters often use past results to make inferences about the future, and measures surrounding the state of the economy are some of the most easily obtained, and thus most used, features to make these judgments. However, voters focus on the near past, not the entire four-year term of the sitting president. For instance, if unemployment rates are high at the beginning of a president's term but low in the time period leading up to an election, voters may still view him favorably and be more likely to vote for the incumbent party in the next election. This has implications both on how we should set up our model but also on how candidates choose to portray themselves during campaign season.
+
+## [September 28: Polling](posts/09_28.md)
