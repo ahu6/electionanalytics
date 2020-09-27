@@ -8,6 +8,7 @@
 library(tidyverse)
 library(ggplot2)
 library(usmap)
+library(formattable)
 
 setwd("~/Documents/OneDrive - Harvard University/Fall '20/Gov 1347/Section/03-Polling")
 
@@ -149,4 +150,15 @@ plot_usmap(data = state_predictions_graph, regions = "states", values = "state_p
   blog_theme1
 
 ggsave("ensemble_model_state_map.png", height = 6, width = 7)
+
+# state predictions in table
+state_predictions_table <- state_predictions_graph %>%
+  select(state, state_prediction)
+
+formattable(state_predictions_table,
+            align = c("l", "c"),
+            list(
+              `state` = formatter("span", style = ~ style(font.weight = "bold")),
+              `state_prediction`= color_tile("#ffefef", "#ff5252")
+            ))
 
