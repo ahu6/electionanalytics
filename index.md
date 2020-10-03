@@ -15,3 +15,6 @@ This week we begin building our predictive model using economic indicators. Vote
 ## [September 28: Polling](posts/09_28.md)
 
 As we saw last week, economic indicators alone may not be highly predictive of presidential election outcomes, especially during this time. One way to improve our model is to use polling data, since these ideally reflect which candidate poll respondents may actually vote for. Similar to economic indicators, the predictive power of polls goes up as we get closer to elections. Using aggregated polling data, we can test out how polling data alone and polling plus economic indicators data affect our model.
+
+## [October 5: Incumbency](posts/10_05.md)
+Incumbency is often cited as an influential factor in election outcomes. In fact, for the seventeen post-war presidential elections thus far (1952 to 2016), an incumbent president has run for re-election eight times and only lost twice. This week, we look at whether adding an incumbency indicator variable affects our predictions as well as whether the supposed incumbency advantage applies to this year's presidential election.
