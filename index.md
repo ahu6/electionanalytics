@@ -18,3 +18,6 @@ As we saw last week, economic indicators alone may not be highly predictive of p
 
 ## [October 5: Incumbency](posts/10_05.md)
 Incumbency is often cited as an influential factor in election outcomes. In fact, for the seventeen post-war presidential elections thus far (1952 to 2016), an incumbent president has run for re-election eight times and only lost twice. This week, we look at whether adding an incumbency indicator variable affects our predictions as well as whether the supposed incumbency advantage applies to this year's presidential election.
+
+## [October 12: The Air War](posts/10_12.md)
+
