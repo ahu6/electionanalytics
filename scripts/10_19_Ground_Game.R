@@ -223,6 +223,3 @@ romney_2012 <- popvote_state_2012 %>%
 
 # romney linear regression model
 lm(R_pv2p ~ count, romney_2012)
-
-
-# demographic variables: surges
