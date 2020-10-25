@@ -4,6 +4,9 @@ Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying 
 
 If you have any comments, questions, or suggestions, please feel free to email me at [ahu@college.harvard.edu](ahu@college.harvard.edu).
 
+## [October 26: Shocks](posts/10_26.md)
+Can shocks, defined as any unexpected or unpredictable events, influence an election's outcome? This question has been studied by scholars in many different contexts, including shark attacks ([Achen and Bartels 2017](https://www.jstor.org/stable/j.ctvc7770q)), war causalties ([Karol and Miguel 2007](http://emiguel.econ.berkeley.edu/assets/miguel_research/33/_Paper__Electoral_Cost_of_War.pdf)), and sports game results ([Healy et al. 2010](https://www.pnas.org/content/107/29/12804.abstract)). Though the causal effects of shocks are difficult to isolate, findings point again to the theory of retroactive voting: that voters do tend to either reward or punish incumbents based on past events. Thus it is plausible that shocks, even ones seemingly apolitical, can alter voters' behaviors. We explore shocks that may affect the 2020 presidential election, including the COVID-19 pandemic and racial justice movements of magnitude unique to this year.
+
 ## [October 19: The Ground Game](posts/10_19.md)
 Even as the Air War becomes increasingly important to elections, on-the-ground contact with constituents still remains an essential component to campaigning. The Ground Game proves to be a potentially more effective method in persuading and mobilizing voters, with messages and interactions being more personalized and targeted in comparison to mass media efforts – but this also makes ground efforts more costly and difficult to carry out. This week we continue our descriptive analysis to determine strategies in field office locations and consider what the Ground Game looks like in the current political climate.
 
