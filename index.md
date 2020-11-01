@@ -4,6 +4,9 @@ Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying 
 
 If you have any comments, questions, or suggestions, please feel free to email me at [ahu@college.harvard.edu](ahu@college.harvard.edu).
 
+## [November 1: Final Prediction](posts/11_01.md)
+Using everything we have learned and explored these past seven weeks, we present our final prediction for the 2020 U.S. presidential election.
+
 ## [October 26: Shocks](posts/10_26.md)
 Can shocks, defined as any unexpected or unpredictable events, influence an election's outcome? This question has been studied by scholars in many different contexts, including shark attacks, war casualties, and sports game results. Though the causal effects of shocks are difficult to isolate, findings point again to the theory of retroactive voting: that voters do tend to either reward or punish incumbents based on past events. Thus it is plausible that shocks, even ones seemingly apolitical, can alter voters' behaviors. We explore shocks that may affect the 2020 presidential election, including the COVID-19 pandemic and racial justice movements of magnitude unique to this year.
 
