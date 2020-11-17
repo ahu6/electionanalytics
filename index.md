@@ -4,6 +4,8 @@ Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying 
 
 If you have any comments, questions, or suggestions, please feel free to email me at [ahu@college.harvard.edu](ahu@college.harvard.edu).
 
+## [November 23: Post-Election Reflection](posts/11_23.md)
+
 ## [November 1: Final Prediction](posts/11_01.md)
 Using everything we have learned and explored these past seven weeks, we present our final prediction for the 2020 U.S. presidential election.
 
