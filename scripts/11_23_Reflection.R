@@ -1,0 +1,619 @@
+### November 23: Evaluation
+### Gov 1347: Election Analysis
+### Alison Hu
+
+### PREAMBLE -----------------------------------
+
+# load libraries
+library(tidyverse)
+library(ggplot2)
+library(statebins)
+library(Metrics)
+library(ggpubr)
+
+# read in data
+popvote_df <- read_csv("popvote_1948-2016.csv")
+popvote_state_df <- read_csv("popvote_bystate_1948-2016.csv")
+poll_state_df <- read_csv("pollavg_bystate_1968-2016.csv")
+covid_state_df <- read_csv("United_States_COVID-19_Cases_and_Deaths_by_State_over_Time.csv")
+poll_2020_df <- read_csv("presidential_poll_averages_2020.csv")
+census_df <- read_csv("census_2019.csv")
+demog_df <- read_csv("demographic_1990-2018.csv")
+electoral_votes_df <- read_csv("electoralcollegevotes_1948-2020.csv")
+
+# standardize naming of Nebraska and Maine
+poll_2020_df$state[((poll_2020_df$state == "Nebraska CD-1") | (poll_2020_df$state == "Nebraska CD-2"))] <- "Nebraska"
+poll_state_df$state[((poll_state_df$state == "NE-1") | (poll_state_df$state == "NE-2") | (poll_state_df$state == "NE-3"))] <- "Nebraska"
+poll_2020_df$state[((poll_2020_df$state == "Maine CD-1") | (poll_2020_df$state == "Maine CD-2"))] <- "Maine"
+poll_state_df$state[((poll_state_df$state == "ME-1") | (poll_state_df$state == "ME-2"))] <- "Maine"
+
+### SUBSET AND MERGE DATA ---------------------------------
+
+# data with incumbency variable
+incumbent_dat <- popvote_df %>%
+  select(year, party, incumbent_party)
+
+# dataframe with state names and abbreviations
+temp_df <- data.frame(states_list, states_list_abr)
+
+# adjust date column
+poll_2020_df <- poll_2020_df %>%
+  mutate(modeldate = as.Date(modeldate, "%m/%d/%y"))
+
+covid_state_df <- covid_state_df %>%
+  mutate(submission_date = as.Date(submission_date, "%m/%d/%y"))
+
+# historic polling and incumbent dataframe
+dat <- popvote_state_df %>% 
+  right_join(poll_state_df %>% 
+               filter(days_left <= 56) %>%      # include polls up to 8 weeks before election
+               group_by(year, state, party) %>% 
+               summarise(avg_poll = mean(avg_poll))) %>%
+  full_join(incumbent_dat)
+
+# dataframe with 2019 population estimates by state
+census_df <- census_df %>%
+  select(NAME, POPESTIMATE2019)
+
+# covid deaths and 2020 polling dataframe
+covid_dat <- covid_state_df %>% 
+  select(submission_date, state, tot_death) %>%
+  rename(state_abr = state) %>%
+  left_join(temp_df, by = c("state_abr" = "states_list_abr")) %>% 
+  rename(state = states_list) %>%
+  inner_join(poll_2020_df, by = c("submission_date" = "modeldate", "state" = "state")) %>%
+  left_join(census_df, by = c("state" = "NAME")) %>%
+  mutate(tot_death_adj = tot_death / POPESTIMATE2019)
+
+# demographics and historic polling dataframe
+demog_dat <- popvote_state_df %>% 
+  full_join(poll_state_df %>% 
+              filter(days_left <= 56) %>%      # include polls up to 8 weeks before election
+              group_by(year, state, party) %>% 
+              summarise(avg_poll = mean(avg_poll)),
+            by = c("year" ,"state")) %>%
+  left_join(temp_df, by = c("state" = "states_list")) %>%
+  left_join(demog_df %>% select(-c("total")), by = c("year", "states_list_abr" = "state"))
+
+# calculate change in each demographic group
+demog_dat_change <- demog_dat %>%
+  group_by(state) %>%
+  mutate(Asian_change = Asian - lag(Asian, order_by = year),
+         Black_change = Black - lag(Black, order_by = year),
+         Hispanic_change = Hispanic - lag(Hispanic, order_by = year),
+         Indigenous_change = Indigenous - lag(Indigenous, order_by = year),
+         White_change = White - lag(White, order_by = year),
+         Female_change = Female - lag(Female, order_by = year),
+         Male_change = Male - lag(Male, order_by = year),
+         age20_change = age20 - lag(age20, order_by = year),
+         age3045_change = age3045 - lag(age3045, order_by = year),
+         age4565_change = age4565 - lag(age4565, order_by = year),
+         age65_change = age65 - lag(age65, order_by = year)
+  )
+
+# new data for 2020
+demog_2020 <- subset(demog_df, year == 2018) %>%
+  left_join(temp_df, by = c("state" = "states_list_abr"))
+
+demog_2020_change <- demog_df %>%
+  filter(year %in% c(2016, 2018)) %>%
+  group_by(state) %>%
+  mutate(Asian_change = Asian - lag(Asian, order_by = year),
+         Black_change = Black - lag(Black, order_by = year),
+         Hispanic_change = Hispanic - lag(Hispanic, order_by = year),
+         Indigenous_change = Indigenous - lag(Indigenous, order_by = year),
+         White_change = White - lag(White, order_by = year),
+         Female_change = Female - lag(Female, order_by = year),
+         Male_change = Male - lag(Male, order_by = year),
+         age20_change = age20 - lag(age20, order_by = year),
+         age3045_change = age3045 - lag(age3045, order_by = year),
+         age4565_change = age4565 - lag(age4565, order_by = year),
+         age65_change = age65 - lag(age65, order_by = year)) %>%
+  filter(year == 2018) %>%
+  left_join(temp_df, by = c("state" = "states_list_abr"))
+
+# electoral votes dataframe
+electoral_votes <- electoral_votes_df %>%
+  select(X1, `2020`) %>%
+  rename(state = X1, votes = `2020`)
+
+
+### PREDICTION -----------------------------------
+
+# prediction variables
+states_list <- c("Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
+                 "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+                 "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine",
+                 "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri",
+                 "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico",
+                 "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+                 "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+                 "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming")
+
+states_list_abr <- c("AL", "AK", "AZ", "AR", "CA", "CO", "CT",
+                     "DE", "FL", "GA", "HI", "ID",
+                     "IL", "IN", "IA", "KS", "KY", "LA", "ME", 
+                     "MD", "MA", "MI", "MN", "MS", "MO", 
+                     "MT", "NE", "NV", "NH", "NJ", "NM",
+                     "NY", "NC", "ND", "OH", "OK", "OR", 
+                     "PA", "RI", "SC", "SD", "TN",
+                     "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY")
+
+# create dataframe for predictions
+state_predictions <- data.frame(states_list, states_list_abr)
+namevector1 <- c("state_prediction")
+namevector2 <- c("poll_model_coef")
+namevector3 <- c("covid_model_coef")
+namevector4a <- c("demog_model_coef1")
+namevector4b <- c("demog_model_coef2")
+namevector5 <- c("lwr")
+namevector6 <- c("upr")
+namevector7 <- c("poll_model_rmse")
+namevector8 <- c("covid_model_rmse")
+namevector9 <- c("demog_model_rmse")
+namevector10 <- c("weighted_rmse")
+state_predictions[ , c(namevector1, namevector2, namevector3, namevector4a, namevector4b, namevector5, 
+                       namevector6, namevector7, namevector8, namevector9, namevector10)] <- NA
+
+# function to find prediction for each state with weighted ensemble
+predict.function <- function(state_name) {
+  
+  # polling model
+  state_df <- dat %>%
+    filter((state == state_name) & (party == "republican"))
+  state_poll_model <- lm(R_pv2p ~ avg_poll, data = state_df)
+  state_predictions$poll_model_coef[state_predictions$states_list == state] <<- state_poll_model$coef[2]
+  state_2020 <- poll_2020_df %>%
+    filter((state == state_name) & (candidate_name == "Donald Trump"))
+  state_2020_true <- data.frame(avg_poll = mean(state_2020$pct_trend_adjusted))
+  
+  ## polling model rmse
+  state_poll <- state_df %>%
+    select(avg_poll)
+  state_df$predicted_pv2p <- predict(state_poll_model, state_poll)
+  state_predictions$poll_model_rmse[state_predictions$states_list == state] <<- rmse(state_df$R_pv2p, state_df$predicted_pv2p)
+  
+  # covid and polling model
+  state_covid_df <- covid_dat %>%
+    filter(state == state_name)
+  state_covid_model <- lm(pct_trend_adjusted ~ tot_death_adj, data = state_covid_df)
+  state_predictions$covid_model_coef[state_predictions$states_list == state] <<- state_covid_model$coef[2]
+  state_covid <- covid_dat %>%
+    filter((state == state_name) & (submission_date == "2020-10-27"))
+  state_covid_true <- data.frame(tot_death_adj = mean(state_covid$tot_death_adj))
+  
+  ## covid and polling model rmse
+  state_covid <- state_covid_df %>%
+    select(tot_death_adj)
+  state_covid_df$predicted_pv2p <- predict(state_covid_model, state_covid)
+  state_predictions$covid_model_rmse[state_predictions$states_list == state] <<- rmse(state_covid_df$pct_trend_adjusted, state_covid_df$predicted_pv2p)
+  
+  # demographic and polling model
+  state_demog_df <- demog_dat_change %>%
+    filter(state == state_name) %>%
+    drop_na()
+  state_demog_model <- lm(R_pv2p ~ Female_change + Black_change, data = state_demog_df)
+  state_predictions$demog_model_coef1[state_predictions$states_list == state] <<- state_demog_model$coef[2]
+  state_predictions$demog_model_coef2[state_predictions$states_list == state] <<- state_demog_model$coef[3]
+  state_demog <- demog_2020_change %>%
+    filter(states_list == state_name)
+  state_demog_true <- data.frame(Female_change = state_demog$Female_change, 
+                                 Black_change = state_demog$Black_change)
+  
+  ## demographic and polling model rmse
+  state_demog <- state_demog_df %>%
+    select(Female_change, Black_change)
+  state_demog_df$predicted_pv2p <- predict(state_demog_model, state_demog)
+  state_predictions$demog_model_rmse[state_predictions$states_list == state] <<- rmse(state_demog_df$R_pv2p, state_demog_df$predicted_pv2p)
+  
+  # weighted rmse
+  state_predictions$weighted_rmse[state_predictions$states_list == state] <<- 0.6*rmse(state_df$R_pv2p, state_df$predicted_pv2p) +
+    0.2*rmse(state_covid_df$pct_trend_adjusted, state_covid_df$predicted_pv2p) +
+    0.2*rmse(state_demog_df$R_pv2p, state_demog_df$predicted_pv2p)
+  
+  # prediction interval bounds
+  state_poll_prediction <- predict(state_poll_model, state_2020_true, interval = "prediction", level = 0.95)
+  state_covid_prediction <- predict(state_covid_model, state_covid_true, interval = "prediction", level = 0.95)
+  state_demog_prediction <- predict(state_demog_model, state_demog_true, interval = "prediction", level = 0.95)
+  
+  state_predictions$lwr[state_predictions$states_list == state] <<- 0.6*state_poll_prediction[, 2] +
+    0.2*state_covid_prediction[, 2] +
+    0.2*state_demog_prediction[, 2]
+  state_predictions$upr[state_predictions$states_list == state] <<- 0.6*state_poll_prediction[, 3] +
+    0.2*state_covid_prediction[, 3] +
+    0.2*state_demog_prediction[, 3]
+  # point prediction
+  state_prediction <- 0.6*predict(state_poll_model, state_2020_true) + 
+    0.2*predict(state_covid_model, state_covid_true) +
+    0.2*(predict(state_demog_model, state_demog_true))
+  
+  return(state_prediction)
+  
+}
+
+# add to dataframe
+for (state in states_list) {
+  state_prediction <- predict.function(state)
+  state_predictions$state_prediction[state_predictions$states_list == state] <- state_prediction
+}
+
+### EVALUATION -----------------------------------
+
+### load libraries
+library(usmap)
+
+### read and merge data
+results <- read_csv("StateResults2020_11_17.csv")
+
+results <- results %>%
+  mutate(R_pv2p = vote2 / totalvote)
+
+df <- results %>%
+  select(name, vote1, vote2) %>%
+  mutate(R_pv2p = vote2 / (vote1 + vote2) * 100) %>%
+  right_join(state_predictions, by = c("name" = "states_list")) %>%
+  mutate(diff = R_pv2p - state_prediction)
+
+df$incumb_win <- FALSE
+df$incumb_win[df$R_pv2p > 50] <- TRUE
+
+# overall rmse
+rmse(df$R_pv2p, df$state_prediction)
+
+# rmse of states Biden won
+df_biden <- df %>%
+  filter(incumb_win == FALSE)
+rmse(df_biden$R_pv2p, df$state_prediction)
+mean(df_biden$diff)
+
+# rmse of states Trump won
+df_trump <- df %>%
+  filter(incumb_win == TRUE)
+rmse(df_trump$R_pv2p, df$state_prediction)
+mean(df_trump$diff)
+
+### visualize
+blog_theme <- theme_bw(base_family = "Avenir") + 
+  theme(panel.border = element_blank(),
+        plot.title   = element_text(size = 15, hjust = 0.5), 
+        axis.text.x  = element_text(angle = 0, hjust = 0.5),
+        axis.text    = element_text(size = 12),
+        strip.text   = element_text(size = 18),
+        legend.position = "none",
+        panel.grid.minor = element_blank())
+
+blog_theme1 <- theme_bw(base_family = "Avenir") + 
+  theme(panel.border = element_blank(),
+        plot.title   = element_text(size = 12, hjust = 0.5), 
+        legend.position = "none",
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+blog_theme2 <- theme_bw(base_family = "Avenir") + 
+  theme(panel.border = element_blank(),
+        axis.line    = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+# map of prediction and final outcome
+map1 <- state_predictions %>% 
+  mutate(states_list_abr = as.character(states_list_abr)) %>%
+  ggplot(aes(state = states_list_abr, fill = (state_prediction <= 50))) +
+  geom_statebins(dark_lbl = "white") +
+  theme_statebins() +
+  scale_fill_manual(values = c("#ff5252", "#2096f3")) +
+  ggtitle("2020 Presidential Election Prediction") +
+  blog_theme1
+
+map2 <- df %>% 
+  mutate(states_list_abr = as.character(states_list_abr)) %>%
+  ggplot(aes(state = states_list_abr, fill = (R_pv2p <= 50))) +
+  geom_statebins(dark_lbl = "white") +
+  theme_statebins() +
+  scale_fill_manual(values = c("#ff5252", "#2096f3")) +
+  ggtitle("2020 Presidential Election Outcome") +
+  blog_theme1
+
+maps <- ggarrange(map1, map2, ncol = 2, nrow = 1)
+maps
+ggsave("prediction_outcome_maps.png", width = 12, height = 4)
+
+# distribution of actual - predicted
+ggplot(df, aes(x = diff)) + 
+  geom_histogram(binwidth = 2, color = "white", fill = "#ff5252") +
+  xlab("2-Party Vote Share") +
+  ylab("Frequency") +
+  ggtitle("Trump Actual - Predicted") +
+  blog_theme
+
+ggsave("actual_predicted.png", width = 6, height = 5)
+
+# distribution of actual - predicted by party
+hist1 <- df %>% filter(incumb_win == TRUE) %>%
+  ggplot(aes(x = abs(diff))) + 
+  geom_histogram(binwidth = 1, color = "white", fill = "#ff5252") +
+  xlim(0, 11) +
+  ylim(0, 6) +
+  xlab("2-Party Vote Share") +
+  ylab("Frequency") +
+  ggtitle("Actual - Predicted in States Trump Won") +
+  blog_theme
+
+hist2 <- df %>% filter(incumb_win == FALSE) %>%
+  ggplot(aes(x = abs(diff))) + 
+  geom_histogram(binwidth = 1, color = "white", fill = "#2096f3") +
+  xlim(0, 11) +
+  ylim(0, 6) +
+  xlab("2-Party Vote Share") +
+  ylab("Frequency") +
+  ggtitle("Actual - Predicted in States Biden Won") +
+  blog_theme
+
+hist <- ggarrange(hist1, hist2, ncol = 1, nrow = 2)
+hist
+ggsave("actual_predicted_party.png", width = 6, height = 8)
+
+# map of errors
+states_map <- usmap::us_map()
+unique(states_map$abbr)
+
+df_map <- df %>%
+  rename(state = name)
+
+error_map <- plot_usmap(data = df_map, regions = "states", values = "diff") + 
+  scale_fill_gradient(low = "#ffffff", high = "#ff5252", name = "Incumbent Party \n2-Party Vote Share") +
+  xlab("") + 
+  ylab("") +
+  blog_theme1
+
+error_map
+
+# map of covid deaths
+df_covid <- covid_dat %>%
+  filter(submission_date == "2020-10-27") %>%
+  select(state_abr, state, tot_death_adj)
+
+df_covid_new = df_covid[seq(1, nrow(df_covid), 4), ]
+
+covid_map <- plot_usmap(data = df_covid_new, regions = "states", values = "tot_death_adj") + 
+  scale_fill_gradient(low = "#ffffff", high = "#ff5252", name = "Incumbent Party \n2-Party Vote Share") +
+  xlab("") + 
+  ylab("") +
+  blog_theme1
+
+ggarrange(error_map, covid_map, ncol = 2, nrow = 1)
+
+### if only used polling data in model
+# create dataframe for predictions
+state_predictions1 <- data.frame(states_list, states_list_abr)
+namevector1 <- c("state_prediction")
+state_predictions1[ , c(namevector1)] <- NA
+
+# function to find prediction for each state with weighted ensemble
+predict.function1 <- function(state_name) {
+  
+  # polling model
+  state_df <- dat %>%
+    filter((state == state_name) & (party == "republican"))
+  state_poll_model <- lm(R_pv2p ~ avg_poll, data = state_df)
+  state_predictions$poll_model_coef[state_predictions$states_list == state] <<- state_poll_model$coef[2]
+  state_2020 <- poll_2020_df %>%
+    filter((state == state_name) & (candidate_name == "Donald Trump"))
+  state_2020_true <- data.frame(avg_poll = mean(state_2020$pct_trend_adjusted))
+  
+  # point prediction
+  state_prediction <- predict(state_poll_model, state_2020_true)
+  
+  return(state_prediction)
+}
+
+# add to dataframe
+for (state in states_list) {
+  state_prediction <- predict.function1(state)
+  state_predictions1$state_prediction[state_predictions$states_list == state] <- state_prediction
+}
+
+df1 <- results %>%
+  select(name, vote1, vote2) %>%
+  mutate(R_pv2p = vote2 / (vote1 + vote2) * 100) %>%
+  right_join(state_predictions1, by = c("name" = "states_list")) %>%
+  mutate(diff = R_pv2p - state_prediction)
+
+df1$incumb_win <- FALSE
+df1$incumb_win[df1$R_pv2p > 50] <- TRUE
+
+# determine electoral vote count
+state_predictions1 <- state_predictions1 %>%
+  left_join(electoral_votes, by = c("states_list" = "state"))
+
+trump_win <- state_predictions1 %>%
+  filter(state_prediction >= 50)
+
+sum(trump_win$votes)
+
+# overall rmse
+rmse(df1$R_pv2p, df1$state_prediction)
+
+# distribution of actual - predicted
+ggplot(df1, aes(x = diff)) + 
+  geom_histogram(binwidth = 2, color = "white", fill = "#ff5252") +
+  xlab("2-Party Vote Share") +
+  ylab("Frequency") +
+  ggtitle("Trump Actual - Predicted") +
+  blog_theme
+
+ggsave("actual_predicted1.png", width = 6, height = 5)
+
+# distribution of actual - predicted by party
+hist1 <- df1 %>% filter(incumb_win == TRUE) %>%
+  ggplot(aes(x = abs(diff))) + 
+  geom_histogram(binwidth = 1, color = "white", fill = "#ff5252") +
+  xlim(0, 11) +
+  ylim(0, 6) +
+  xlab("2-Party Vote Share") +
+  ylab("Frequency") +
+  ggtitle("Actual - Predicted in States Trump Won") +
+  blog_theme
+
+hist2 <- df1 %>% filter(incumb_win == FALSE) %>%
+  ggplot(aes(x = abs(diff))) + 
+  geom_histogram(binwidth = 1, color = "white", fill = "#2096f3") +
+  xlim(0, 11) +
+  ylim(0, 6) +
+  xlab("2-Party Vote Share") +
+  ylab("Frequency") +
+  ggtitle("Actual - Predicted in States Biden Won") +
+  blog_theme
+
+hist <- ggarrange(hist1, hist2, ncol = 1, nrow = 2)
+hist
+ggsave("actual_predicted_party1.png", width = 6, height = 8)
+
+### COUNTY SWING MAP -----------------------------------
+### data from David Leip's Eleection Atlast https://uselectionatlas.org/ 2020 data is current as of 11/18/2020 - not all states are completely reported
+### code provided by Prof Ryan D. Enos
+
+## load libraries
+library(tidyverse)
+library(ggrepel)
+
+## packages for mapping
+library(maps)
+library(ggmap)
+library(RColorBrewer)
+library(mapproj)
+library(usdata)
+library(usmap) ## for fips code conversion
+
+us.counties <- map_data("county") # polygon data for maps
+us.states <- map_data("state")
+
+data(county.fips) ## for merging below, these are the fips codes from the usadata package that allow the merging with the county maps data
+county.fips = county.fips %>%
+  rename('FIPS' = fips) %>%
+  mutate(
+    region = str_split(polyname,',',simplify = T)[,1],
+    subregion = str_split(polyname,',',simplify = T)[,2])
+
+
+county.dir = ("~/county_data/")  ##directory where county data is stored
+
+
+use.names = read_csv(paste0(county.dir,'2020_0_0_2.csv'),n_max = 0) %>%  #read in the names of columsn because there is an extra column of data that below that should be removed
+  names()
+dem.can = use.names[5] ##extract names of candidates for use below
+rep.can = use.names[6]
+dat.2020 = read_csv(paste0(county.dir,'2020_0_0_2.csv'),
+                    skip = 2,
+                    col_names = use.names)%>%
+  #in mutate, must use !! ands as.symbol to take variables above, see here: https://stackoverflow.com/questions/27197617/filter-data-frame-by-character-column-name-in-dplyr
+  mutate(GOP.margin.2020 = ((!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can)))-(!!as.symbol(dem.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))))*100,
+         GOP.percent.2020 = (!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))*100))%>%
+  select(`Geographic Name`,FIPS,GOP.margin.2020,GOP.percent.2020)
+
+
+##now do the same thing for each of the other years
+use.names = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2016_0_0_2_c.csv'),n_max = 0) %>%
+  names()
+dem.can = use.names[5]
+rep.can = use.names[6]
+dat.2016 = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2016_0_0_2_c.csv'),
+                    skip = 2,
+                    col_names = use.names)%>%
+  mutate(GOP.margin.2016 = ((!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can)))-(!!as.symbol(dem.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))))*100,
+         GOP.percent.2016 = (!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))*100))%>%
+  select(FIPS,GOP.margin.2016,GOP.percent.2016)
+
+use.names = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2012_0_0_2.csv'),n_max = 0) %>%
+  names()
+dem.can = use.names[5]
+rep.can = use.names[6]
+dat.2012 = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2012_0_0_2.csv'),
+                    skip = 2,
+                    col_names = use.names)%>%
+  mutate(GOP.margin.2012 = ((!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can)))-(!!as.symbol(dem.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))))*100,
+         GOP.percent.2012 = (!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))*100))%>%
+  select(FIPS,GOP.margin.2012,GOP.percent.2012)
+
+use.names = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2008_0_0_2.csv'),n_max = 0) %>%
+  names()
+dem.can = use.names[5]
+rep.can = use.names[6]
+dat.2008 = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2008_0_0_2.csv'),
+                    skip = 2,
+                    col_names = use.names)%>%
+  mutate(GOP.margin.2008 = ((!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can)))-(!!as.symbol(dem.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))))*100,
+         GOP.percent.2008 = (!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))*100))%>%
+  select(FIPS,GOP.margin.2008,GOP.percent.2008)
+
+use.names = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2004_0_0_2.csv'),n_max = 0) %>%
+  names()
+dem.can = use.names[5]
+rep.can = use.names[6]
+dat.2004 = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2004_0_0_2.csv'),
+                    skip = 2,
+                    col_names = use.names)%>%
+  mutate(GOP.margin.2004 = ((!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can)))-(!!as.symbol(dem.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))))*100,
+         GOP.percent.2004 = (!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))*100))%>%
+  select(FIPS,GOP.margin.2004,GOP.percent.2004)
+
+use.names = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2000_0_0_2.csv'),n_max = 0) %>%
+  names()
+dem.can = use.names[5]
+rep.can = use.names[6]
+dat.2000 = read_csv(paste0(county.dir,'County_Presidential_Election_Data_2000_0_0_2.csv'),
+                    skip = 2,
+                    col_names = use.names)%>%
+  mutate(GOP.margin.2000 = ((!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can)))-(!!as.symbol(dem.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))))*100,
+         GOP.percent.2000 = (!!as.symbol(rep.can)/(!!as.symbol(rep.can) + !!as.symbol(dem.can))*100))%>%
+  select(FIPS,GOP.margin.2000,GOP.percent.2000)
+
+#merge into common dataset
+dat = dat.2020 %>% right_join(dat.2016, 
+                              by = "FIPS")%>%
+  left_join(dat.2012, 
+            by = "FIPS")%>%
+  left_join(dat.2008, 
+            by = "FIPS")%>%
+  left_join(dat.2004, 
+            by = "FIPS")%>%
+  left_join(dat.2000, 
+            by = "FIPS")%>%
+  
+  mutate(swing.GOP.2020 = GOP.margin.2020-GOP.margin.2016,
+         swing.GOP.2016 = GOP.margin.2016-GOP.margin.2012,
+         swing.GOP.2012 = GOP.margin.2012-GOP.margin.2008,
+         swing.GOP.2008 = GOP.margin.2008-GOP.margin.2004,
+         swing.GOP.2004 = GOP.margin.2004-GOP.margin.2000,
+         swing.GOP.2000.2020 = GOP.margin.2020-GOP.margin.2000)
+
+
+
+dat = left_join(dat,county.fips) ##merge with fips data
+
+dat = left_join(dat,us.counties) ##merge with county data
+
+##variables for maps
+ylims = c(25,49)
+xlims = c(-120.25,-75)
+legend.title.size = 11
+legend.text.size = 11
+
+## map
+ggplot(data = dat,mapping = aes(x = long, y = lat,
+                                group = group,fill = swing.GOP.2020)) +
+  geom_polygon() +
+  scale_fill_gradient2(low = "#2096f3", high = "#ff5252", midpoint = 0, limits = c(-50,50))+
+  geom_polygon(data = us.states, mapping = aes(long, lat, group = group),
+               fill = NA, color = "gray")+
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45, #convert map projection to albers for aesthetic purposes
+            xlim = xlims,
+            ylim = ylims)+
+  labs(fill = "GOP Swing\n2016-2020")+
+  blog_theme2
+
+ggsave("county_swing_2016_2020.png", height = 6, width = 7)
