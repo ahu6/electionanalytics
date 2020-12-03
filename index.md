@@ -4,6 +4,8 @@ Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying 
 
 If you have any comments, questions, or suggestions, please feel free to email me at [ahu@college.harvard.edu](ahu@college.harvard.edu).
 
+## [December 10: Narratives](posts/11_23.md)
+
 ## [November 23: Post-Election Reflection](posts/11_23.md)
 With the outcome of this year's much-anticipated election finally solidified and a new president-elect for the nation, we take a look at how our model performed.
 
