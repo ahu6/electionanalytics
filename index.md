@@ -4,7 +4,7 @@ Hello! My name is Alison Hu, and I'm a sophomore at Harvard University studying 
 
 If you have any comments, questions, or suggestions, please feel free to email me at [ahu@college.harvard.edu](ahu@college.harvard.edu).
 
-## [December 10: Election Narratives](posts/11_23.md)
+## [December 10: Election Narratives](posts/12_10.md)
 After a presidential election, the media and campaigns speculate on possible narratives to explain why the election turned out the way it did. In our final blog post, we test a narrative on this year's election supporting Biden's win: that the Biden campaign's message was both effective in its message centered around decency and consistent across time. To do so, we look to campaign speeches and Twitter data.
 
 ## [November 23: Post-Election Reflection](posts/11_23.md)
